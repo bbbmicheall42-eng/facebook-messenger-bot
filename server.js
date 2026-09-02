@@ -1,59 +1,57 @@
-const express = require("express");
+export default {
+  async fetch(request, env) {
 
-const app = express();
-app.use(express.json());
+    if (request.method === "GET") {
+      const url = new URL(request.url);
 
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+      const mode = url.searchParams.get("hub.mode");
+      const token = url.searchParams.get("hub.verify_token");
+      const challenge = url.searchParams.get("hub.challenge");
 
-// اختبار webhook مع Meta
-app.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    res.status(200).send(challenge);
-  } else {
-    res.sendStatus(403);
-  }
-});
-
-// استقبال رسائل Messenger
-app.post("/webhook", async (req, res) => {
-  res.sendStatus(200);
-
-  const body = req.body;
-
-  if (body.object === "page") {
-    for (const entry of body.entry || []) {
-      for (const event of entry.messaging || []) {
-        if (event.message && event.sender) {
-          const senderId = event.sender.id;
-
-          await fetch(
-            `https://graph.facebook.com/v26.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                recipient: { id: senderId },
-                message: {
-                  text: " 🫶🏻لالاڪ حسـناء هيا ملڪة جمال المغࢪب"
-                }
-              })
-            }
-          );
-        }
+      if (mode === "subscribe" && token === env.VERIFY_TOKEN) {
+        return new Response(challenge, { status: 200 });
       }
+
+      return new Response("Forbidden", { status: 403 });
     }
+
+    if (request.method === "POST") {
+      const body = await request.json();
+
+      if (body.object === "page") {
+        for (const entry of body.entry || []) {
+          for (const event of entry.messaging || []) {
+
+            if (event.message && event.sender && !event.message.is_echo) {
+              const senderId = event.sender.id;
+
+              await fetch(
+                `https://graph.facebook.com/v26.0/me/messages?access_token=${env.PAGE_ACCESS_TOKEN}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({
+                    recipient: {
+                      id: senderId
+                    },
+                    message: {
+                      text: "لالاڪ حسـناء هيا مَلكة جمـال المغࢪب 🫶🏻"
+                    }
+                  })
+                }
+              );
+            }
+          }
+        }
+
+        return new Response("EVENT_RECEIVED", { status: 200 });
+      }
+
+      return new Response("Not a page event", { status: 404 });
+    }
+
+    return new Response("Method Not Allowed", { status: 405 });
   }
-});
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Bot running on port ${PORT}`);
-});
+};
