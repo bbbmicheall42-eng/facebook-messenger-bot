@@ -41,7 +41,7 @@ app.post("/webhook", async (req, res) => {
               body: JSON.stringify({
                 recipient: { id: senderId },
                 message: {
-                  text: "سلام صافا عليك ❤️ حاليا أنا مكاينش، فاش نرجع غادي نهضر معاك."
+                  text: " 🫶🏻لالاڪ حسـناء هيا ملڪة جمال المغࢪب"
                 }
               })
             }
