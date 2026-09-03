@@ -8,7 +8,11 @@ export default {
       const token = url.searchParams.get("hub.verify_token");
       const challenge = url.searchParams.get("hub.challenge");
 
-      if (mode === "subscribe" && token === env.VERIFY_TOKEN) {
+      // Temporary verification test
+      if (
+        mode === "subscribe" &&
+        token === "mybot_verify_2026"
+      ) {
         return new Response(challenge, { status: 200 });
       }
 
